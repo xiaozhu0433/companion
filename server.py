@@ -24,7 +24,7 @@ import core.hormone as H          # noqa: E402
 import core.oath as O             # noqa: E402
 import core.store as S            # noqa: E402
 from core import llm, prompt      # noqa: E402
-from core.home import HOME       # noqa: E402
+from core.pages import HOME, CHAT  # noqa: E402
 
 CFG = {}
 MOCK = False
@@ -128,11 +128,13 @@ class Handler(BaseHTTPRequestHandler):
         q = urllib.parse.parse_qs(u.query)
         if u.path == '/':
             # 2026-11-02 她：「是不是得有个首页呀」—— 打开先看见人，再看见输入框
-            return self._send(200, HOME.format(name=CFG.get('name', '小屋')),
+            return self._send(200, HOME.replace('{name}', CFG.get('name', '小屋')),
                               'text/html; charset=utf-8')
         if u.path == '/chat':
-            return self._send(200, PAGE.format(title=CFG.get('name', '小屋')),
+            return self._send(200, CHAT.replace('{name}', CFG.get('name', '小屋')),
                               'text/html; charset=utf-8')
+        if u.path.startswith('/static/'):
+            return self._static(u.path[len('/static/'):])
         if u.path == '/history':
             n = int((q.get('limit') or ['30'])[0])
             return self._send(200, {'ok': True, 'messages': S.recent(n),
@@ -142,6 +144,21 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == '/health':
             return self._send(200, {'ok': True, 'mock': MOCK})
         return self._send(404, {'ok': False, 'error': 'not found'})
+
+    def _static(self, rel):
+        base = os.path.join(HERE, 'static')
+        full = os.path.abspath(os.path.join(base, rel))
+        if not full.startswith(base + os.sep) or not os.path.isfile(full):
+            return self._send(404, {'ok': False, 'error': 'not found'})
+        ctype = 'text/css; charset=utf-8' if full.endswith('.css') else 'application/octet-stream'
+        with open(full, 'rb') as f:
+            body = f.read()
+        self.send_response(200)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'public, max-age=86400')
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_POST(self):
         u = urllib.parse.urlparse(self.path)
