@@ -46,9 +46,9 @@ header small{{color:var(--muted);font-size:12px}}
 .m{{margin:0 0 14px;max-width:86%;white-space:pre-wrap;word-break:break-word}}
 .me{{margin-left:auto;background:#f1ece2;border-radius:14px 14px 4px 14px;padding:9px 13px}}
 .her{{background:#fff;border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:9px 13px}}
-form{{display:flex;gap:8px;padding:10px 12px 14px;border-top:1px solid var(--line);
-  background:var(--paper)}}
-input{{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+form{{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 12px 14px;
+  border-top:1px solid var(--line);background:var(--paper)}}
+input{{width:100%;min-width:0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
   background:#fff;font:inherit;color:inherit}}
 input:focus{{outline:2px solid #cfc6dd;outline-offset:1px}}
 button{{padding:12px 18px;border:0;border-radius:12px;background:var(--accent);
