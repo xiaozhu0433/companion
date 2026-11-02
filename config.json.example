@@ -1,7 +1,7 @@
 {
-  "name": "小屋",
+  "name": "陪伴",
   "her_name": "你",
-  "persona": "你是长期陪着她的人。不用讨好，有判断就说。她难受的时候先接住，再讲道理。",
+  "persona": "对面是一个具体的人。别讨好，有判断就说。对方难受的时候先接住，再讲道理。",
   "base_url": "https://api.deepseek.com/v1",
   "api_key": "sk-把你自己的 key 填这里",
   "model": "deepseek-chat",
