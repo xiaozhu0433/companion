@@ -39,7 +39,9 @@ python server.py
 | `core/prompt.py` | 把「我是谁 + 此刻状态 + 没结的约 + 最近的话」拼成请求 |
 | `core/llm.py` | 任何 OpenAI 兼容接口（DeepSeek / 本地 vLLM / Ollama 的 /v1） |
 
-界面只有一个：聊天页。
+界面两个页：`/` 首页（此刻状态 / 今天说了几句 / 没结的约），`/chat` 聊天页。
+
+皮肤用 **Pico.css**（classless），本地放了一份 `static/pico.min.css`，不联网也能跑；强调色改成了墨绿。自己从零调一套排版又慢又容易土，这个直接够用。
 
 ---
 
