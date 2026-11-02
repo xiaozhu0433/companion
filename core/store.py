@@ -45,3 +45,13 @@ def said_today():
     n = c.execute("SELECT count(*) FROM messages WHERE role='user' AND ts>=?", (t0,)).fetchone()[0]
     c.close()
     return n
+
+
+def clear_messages():
+    """只清聊天记录；约和激素账都不动。"""
+    c = _c()
+    n = c.execute('SELECT count(*) FROM messages').fetchone()[0]
+    c.execute('DELETE FROM messages')
+    c.commit()
+    c.close()
+    return n
