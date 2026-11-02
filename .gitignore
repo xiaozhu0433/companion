@@ -3,9 +3,5 @@ data.db-*
 config.json
 __pycache__/
 *.pyc
-preview*.png
-phone*.png
-wide*.png
-w480.png
-w560.png
-wrap.html
+wrap*.html
+*.png
