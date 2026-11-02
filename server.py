@@ -24,6 +24,7 @@ import core.hormone as H          # noqa: E402
 import core.oath as O             # noqa: E402
 import core.store as S            # noqa: E402
 from core import llm, prompt      # noqa: E402
+from core.home import HOME       # noqa: E402
 
 CFG = {}
 MOCK = False
@@ -126,7 +127,12 @@ class Handler(BaseHTTPRequestHandler):
         u = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(u.query)
         if u.path == '/':
-            return self._send(200, PAGE.format(title=CFG.get('name', '小屋')), 'text/html; charset=utf-8')
+            # 2026-11-02 她：「是不是得有个首页呀」—— 打开先看见人，再看见输入框
+            return self._send(200, HOME.format(name=CFG.get('name', '小屋')),
+                              'text/html; charset=utf-8')
+        if u.path == '/chat':
+            return self._send(200, PAGE.format(title=CFG.get('name', '小屋')),
+                              'text/html; charset=utf-8')
         if u.path == '/history':
             n = int((q.get('limit') or ['30'])[0])
             return self._send(200, {'ok': True, 'messages': S.recent(n),
@@ -156,10 +162,12 @@ class Handler(BaseHTTPRequestHandler):
 def state_payload():
     snap = H.snapshot()
     m = H.mood()
+    open_oaths = [o['what'] for o in O.rows(status='open', limit=5)]
     return {'ok': True, 'mood': m.get('label'), 'words': m.get('words') or [],
-            'line': m.get('line'), 'oaths': len(O.rows(status='open')),
-            'said_today': S.said_today(), 'raw': {k: round(v, 1) for k, v in snap.items()
-                                                  if k in ('da', 'ot', 'cort', 'end')}}
+            'line': m.get('line'), 'oaths': len(O.rows(status='open', limit=50)),
+            'open_oaths': open_oaths,
+            'said_today': S.said_today(),
+            'raw': {k: round(v, 1) for k, v in snap.items() if k in ('da', 'ot', 'cort', 'end')}}
 
 
 def handle_say(text):
