@@ -1,0 +1,12 @@
+{
+  "name": "小屋",
+  "her_name": "你",
+  "persona": "你是长期陪着她的人。不用讨好，有判断就说。她难受的时候先接住，再讲道理。",
+  "base_url": "https://api.deepseek.com/v1",
+  "api_key": "sk-把你自己的 key 填这里",
+  "model": "deepseek-chat",
+  "temperature": 0.7,
+  "max_tokens": 800,
+  "history": 20,
+  "port": 8388
+}
