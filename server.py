@@ -24,7 +24,7 @@ import core.hormone as H          # noqa: E402
 import core.oath as O             # noqa: E402
 import core.store as S            # noqa: E402
 from core import llm, prompt      # noqa: E402
-from core.pages import HOME, CHAT  # noqa: E402
+from core.pages import HOME, CHAT, SETTINGS  # noqa: E402
 
 CFG = {}
 MOCK = False
@@ -139,6 +139,13 @@ class Handler(BaseHTTPRequestHandler):
             n = int((q.get('limit') or ['30'])[0])
             return self._send(200, {'ok': True, 'messages': S.recent(n),
                                     'state': state_payload()})
+        if u.path == '/settings':
+            return self._send(200, SETTINGS.replace('{name}', CFG.get('name', '陪伴')),
+                              'text/html; charset=utf-8')
+        if u.path == '/config':
+            pub = {k: v for k, v in CFG.items() if k not in ('api_key',)}
+            pub['api_key_set'] = bool(CFG.get('api_key'))
+            return self._send(200, pub)
         if u.path == '/state':
             return self._send(200, state_payload())
         if u.path == '/health':
@@ -160,18 +167,33 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _body(self):
+        n = int(self.headers.get('Content-Length') or 0)
+        return json.loads(self.rfile.read(n).decode('utf-8') or '{}')
+
     def do_POST(self):
         u = urllib.parse.urlparse(self.path)
-        if u.path != '/say':
-            return self._send(404, {'ok': False, 'error': 'not found'})
         try:
-            n = int(self.headers.get('Content-Length') or 0)
-            data = json.loads(self.rfile.read(n).decode('utf-8') or '{}')
-            text = (data.get('text') or '').strip()
-            if not text:
-                return self._send(400, {'ok': False, 'error': 'empty'})
-            out = handle_say(text)
-            return self._send(200, out)
+            data = self._body()
+            if u.path == '/say':
+                text = (data.get('text') or '').strip()
+                if not text:
+                    return self._send(400, {'ok': False, 'error': 'empty'})
+                return self._send(200, handle_say(text))
+            if u.path == '/oath':
+                what = (data.get('what') or '').strip()
+                if not what:
+                    return self._send(400, {'ok': False, 'error': '约的内容是空的'})
+                hours = float(data.get('hours') or 8)
+                oid = O.add(what, hours)
+                return self._send(200, {'ok': True, 'id': oid})
+            if u.path == '/config':
+                saved = save_config(data)
+                return self._send(200, saved)
+            if u.path == '/reset':
+                n = S.clear_messages()
+                return self._send(200, {'ok': True, 'deleted': n})
+            return self._send(404, {'ok': False, 'error': 'not found'})
         except Exception as e:
             return self._send(500, {'ok': False, 'error': '%s: %s' % (type(e).__name__, str(e)[:200])})
 
@@ -201,6 +223,34 @@ def handle_say(text):
     S.add('assistant', reply)
     H.observe_me(reply)
     return {'ok': True, 'reply': reply, 'state': state_payload()}
+
+
+def save_config(data):
+    """写 config.json（字段白名单），同时更新内存里的 CFG。
+
+    api_key 传空 = 不改；传别的 = 覆盖。返回里永远不带 key。
+    """
+    allowed = ('name', 'her_name', 'persona', 'base_url', 'model',
+               'temperature', 'max_tokens', 'history', 'port')
+    for k in allowed:
+        if k in data and data[k] not in (None, ''):
+            if k in ('temperature',):
+                CFG[k] = float(data[k])
+            elif k in ('max_tokens', 'history', 'port'):
+                CFG[k] = int(data[k])
+            else:
+                CFG[k] = str(data[k]).strip()
+    key = (data.get('api_key') or '').strip()
+    if key:
+        CFG['api_key'] = key
+    path = os.path.join(HERE, 'config.json')
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(CFG, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, path)
+    pub = {k: v for k, v in CFG.items() if k != 'api_key'}
+    pub['api_key_set'] = bool(CFG.get('api_key'))
+    return {'ok': True, 'config': pub}
 
 
 def main():
